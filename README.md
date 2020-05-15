@@ -91,7 +91,7 @@ for example : `netlab-machine -m Internet_GW load`
 
 Use a telnet to the configured port to connect to the machine 
 
-`telnet <IP of your HOST> <port number>
+`telnet <IP of your HOST> <port number>`
 
 *  Stop a machine
 
