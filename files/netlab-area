@@ -1,0 +1,121 @@
+#!/bin/sh
+
+## Global variables 
+PATH_AREA="/usr/local/etc/netlab"
+FILE_AREAS="${PATH_AREA}/areas.conf"
+MACHINE_BIN_PATH="."
+MACHINE_BIN="netlab-machine"
+
+##########################
+## Options parsing section
+##########################
+while getopts "a:h" opt
+do
+        case "$opt" in
+                a) MYAREA=${OPTARG};;
+                h) usage
+                   exit 1;;
+        esac
+done
+shift $(($OPTIND - 1))
+
+usage() {
+                echo "netlab-area -h -a <area> load | unload | reload | status"
+                echo "-h : print this message"
+                echo "-a <area> : select a specific area"
+                echo "load : loading operations"
+                echo "unload : unloading operations"
+				echo "reload : reloading operations"
+}
+
+####################
+## Check functions
+####################
+check_area_listed()
+{
+	LINE_AREA=$(grep "$1" $FILE_AREAS)
+	if [ -n "$LINE_AREA" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+load()
+{
+	if [ -n "$1" ]; then
+		check_area_listed $1
+		if [ $? -eq 1 ]; then
+			echo "Area is not listed... Existing"
+			exit 1
+		fi
+	fi
+	LISTE_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$1" | cut -d ":" -f 1)
+	for AREA in $LISTE_AREA; do
+		echo "Area : $AREA"
+		PARAMS_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$AREA")
+		GATEWAY=$(echo $PARAMS_AREA | cut -d ":" -f 2)
+		echo "loading gateway $GATEWAY"
+		$MACHINE_BIN -m $GATEWAY load
+		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 3); do
+			echo "Loading machine $MACHINE"
+			$MACHINE_BIN -m $MACHINE load
+		done
+		echo "====="
+	done
+}
+
+unload()
+{
+	if [ -n "$1" ]; then
+		check_area_listed $1
+		if [ $? -eq 1 ]; then
+			echo "Area is not listed... Existing"
+			exit 1
+		fi
+	fi
+	LISTE_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$1" | cut -d ":" -f 1)
+	for AREA in $LISTE_AREA; do
+		echo "Area : $AREA"
+		PARAMS_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$AREA")
+		GATEWAY=$(echo $PARAMS_AREA | cut -d ":" -f 2)
+		echo "Unloading gateway $GATEWAY"
+		$MACHINE_BIN -m $GATEWAY unload
+		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 3); do
+			echo "Unloading machine $MACHINE"
+			$MACHINE_BIN -l -m $MACHINE unload
+		done
+		echo "====="
+	done
+}
+
+status()
+{
+	if [ -n "$1" ]; then
+		check_area_listed $1
+		if [ $? -eq 1 ]; then
+			echo "Area is not listed... Existing"
+			exit 1
+		fi
+	fi
+	LISTE_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$1" | cut -d ":" -f 1)
+	for AREA in $LISTE_AREA;
+	do
+		PARAMS_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$AREA")
+		echo "AREA : $AREA"
+		$MACHINE_BIN -m $(echo $PARAMS_AREA | cut -d ":" -f 2) status
+		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 3);
+		do
+			$MACHINE_BIN -l -m $MACHINE status
+		done
+		echo "====="
+	done
+}
+
+if ! [ "$1" = "load" ] && ! [ "$1" = "unload" ] && ! [ "$1" = "status" ] ; then
+	echo "Bad main parameter \"$1\"... Exiting"
+	usage
+	exit 1
+fi
+
+$1 $MYAREA

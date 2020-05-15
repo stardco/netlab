@@ -1,0 +1,387 @@
+#!/bin/sh
+#set -x
+## Global variables 
+PATH_MACHINE="/usr/local/etc/netlab"
+PATH_RUN="/var/run/netlab"
+PATH_SWITCH="./switch"
+PATH_REPO="${PATH_MACHINE}/repo"
+PATH_TEMPLATES="${PATH_MACHINE}/templates"
+FILE_TEMPLATES="${PATH_MACHINE}/templates.conf"
+FILE_MACHINES="${PATH_MACHINE}/machines.conf"
+PATH_INTERCO="/usr/local/etc/netlab"
+FILE_INTERCO="${PATH_INTERCO}/interco.conf"
+SER2NET_FILE="${PATH_RUN}/ser2net_session"
+SER2NET_TIMEOUT="300"
+INT2TAP_BIN="int2tap"
+#. ${PATH_SWITCH}/switches.conf
+. ${FILE_INTERCO}
+
+##########################
+## Options parsing section
+##########################
+while getopts "lhm:" opt
+do
+        case "$opt" in
+		l) STATUS_LIGHT=1;;
+                m) MYMACHINE=${OPTARG};;
+                h) usage
+                   exit 1;;
+        esac
+done
+shift $(($OPTIND - 1))
+
+usage() {
+		echo "netlab-machine -h -m <machine> load | unload | status"
+		echo "-h : print this message"
+		echo "-m <machine> : create or delete the machine in parameter"
+		echo "load : loading operations"
+		echo "unload : unloading operations"
+		echo "status : unloading operations"
+}
+
+####################
+## Check functions
+####################
+check_machine_listed()
+{
+	if [ "$1" = "" ]; then
+		return 1
+	else
+		LINE_MACHINE=$(grep $1 $FILE_MACHINES)
+		if [ "$LINE_MACHINE" = "" ]; then
+			return 1
+		else
+			return 0
+		fi
+	fi
+}
+
+check_machine_not_loaded()
+{
+	if [ -d "/dev/vmm" ]; then
+		LOADED_MACHINE=$(ls /dev/vmm | grep $1)
+	else
+		LOADED_MACHINE=""		
+	fi
+	if [ -z "$LOADED_MACHINE" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+#####################
+## Exist functions
+#####################
+exist_switch()
+{
+  tstSwitch=$1
+  test=$(ifconfig $tstSwitch 2> /dev/null | grep $tstSwitch | wc -l)
+  return $test
+}
+
+nbr_port_switch()
+{
+  tstSwitch=$1
+  numPort=$(ifconfig $tstSwitch 2> /dev/null | grep ${tstSwitch}p | wc -l)
+  return $numPort
+}
+
+exist_port()
+{
+  tstPort=$1
+  test=$(ifconfig $tstPort 2> /dev/null | grep $tstPort | wc -l)
+  return $test
+}
+
+
+######################################
+## Console number generator function
+######################################
+num_console()
+{
+		NUMCONSOLE=0
+		while [ -n "$(cat $SER2NET_FILE | cut -d ":" -f 2 | grep $NUMCONSOLE)" ]; do
+				NUMCONSOLE=$(expr $NUMCONSOLE + 1)
+		done
+        return $NUMCONSOLE;
+}
+
+###########################
+## Create image function
+###########################
+create_volume()
+{
+	TYPE_VM=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f2 -d ':')
+	TYPE_MAP=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f3 -d ':')
+	if [ -z "$TYPE_VM" ]; then
+		cp $PATH_TEMPLATES/$TYPE_VM $PATH_REPO/$1.img
+		if [ "$TYPE_MAP" = "yes" ]; then
+			echo "(hd0) ${PATH_REPO}/$1.img" > $PATH_REPO/$1.map
+		fi
+		return 0;
+	fi
+	return 1;
+#	TYPE_BSDRP_196="BSDRP-1.96-full-amd64-serial.img"
+#	TYPE_FREEBSD_121="FreeBSD-12.1-RELEASE.img"
+#	TYPE_DEBIAN_102="Debian-10.2.0.img"
+#	TYPE_EINE_095="EINE-0.95-full-amd64.img"
+#	case "$2" in
+#		BSDRP_196)	cp $PATH_TEMPLATES/$TYPE_BSDRP_196 $PATH_REPO/$1.img
+#					return 0;;
+#		FREEBSD_121)	cp $PATH_TEMPLATES/$TYPE_FREEBSD_121 $PATH_REPO/$1.img
+#					return 0;;
+#		EINE_095)	cp $PATH_TEMPLATES/$TYPE_EINE_095 $PATH_REPO/$1.img
+#					return 0;;
+#		DEBIAN_102)	cp $PATH_TEMPLATES/$TYPE_DEBIAN_102 $PATH_REPO/$1.img
+#					echo "(hd0) ${PATH_REPO}/$1.img" > $PATH_REPO/$1.map
+#					return 0;;
+#		*)	return 1;;
+#	esac
+}
+
+#####################
+## Ser2net functions
+#####################
+ser2net_create()
+{
+        MACH=$1
+        COUNTER=$2
+        PORT=$3
+		ser2net -C $PORT:telnet:${SER2NET_TIMEOUT}:/dev/nmdm${COUNTER}B
+        PIDSER2NET=$(ps -ax | grep nmdm${COUNTER}B | grep ser2net | sed -e "s/^ *//" | cut -d " " -f 1)
+        echo "${MACH}:${COUNTER}:${PIDSER2NET}" >> $SER2NET_FILE
+}
+
+ser2net_destroy()
+{
+        MACH=$1
+        PIDSER2NET=$(cat ${SER2NET_FILE} | grep ${MACH} | cut -d ":" -f 3)
+        kill $PIDSER2NET
+		sed -i '' -e "/${MACH}/d" ${SER2NET_FILE}
+}
+
+
+####################
+## Main functions
+####################
+status()
+{
+	LISTE_MACHINE=$(grep -v -e "^#" $FILE_MACHINES | grep "$1" | cut -d ":" -f 1)
+	if [ -z $STATUS_LIGHT ]; then
+		echo "NAME:TYPE:PORT:INTERFACES				status"
+	fi
+	if [ -d "/dev/vmm" ]; then
+		for MACHINE in $LISTE_MACHINE; do
+			PARAMS_MACHINE=$(grep -v -e "^#" $FILE_MACHINES | grep "$MACHINE")
+			if [ -n "$(ls /dev/vmm | grep "$MACHINE")" ]; then
+				STATUS="loaded "
+			else
+				STATUS="not loaded "
+			fi
+			if [ -n "$(ps -ax | grep -v "grep" | grep "bhyve: $MACHINE (bhyve)")" ]; then
+				STATUS="$STATUS running"
+			else
+				STATUS="$STATUS not running"
+			fi
+			echo "$PARAMS_MACHINE				$STATUS"
+		done
+	else
+		echo "No machine loaded..."
+	fi
+}
+
+load()
+{
+	NOM_MACHINE=$1
+	
+	# check if machine is listed
+	check_machine_listed $NOM_MACHINE
+	if [ $? -eq 1 ]; then
+		echo "Machine is not listed... Existing"
+		exit 1
+	fi
+
+	# check if machine is not loaded
+	check_machine_not_loaded $NOM_MACHINE
+	if [ $? -eq 1 ]; then
+		echo "Machine is already loaded... Existing"
+		exit 1
+	fi
+		
+	# Get the line paramater of the machine
+	PARAMS_MACHINE=$(grep $1 $FILE_MACHINES)
+	
+	# Get the type and delete it in the variable
+	TYPE_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 2)
+	
+	# Get the port number 
+	MEMORY_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 3)
+	
+	# Get the port number 
+	PORT_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 4)
+	
+	# Get the network interfaces list
+	INTERFACES_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 5)
+
+	# Make the image path and name 
+	PATH_MACHINE_FILE="${PATH_REPO}/${NOM_MACHINE}.img"
+	if [ -r "${PATH_REPO}/${NOM_MACHINE}.map" ]; then
+		PATH_MACHINE_MAP_FILE="${PATH_REPO}/${NOM_MACHINE}.map"
+	else
+		PATH_MACHINE_MAP_FILE=0
+	fi
+	#if [ "$TYPE_MACHINE" = "DEBIAN_102" ]; then
+	#	PATH_MACHINE_MAP_FILE="${PATH_REPO}/${NOM_MACHINE}.map"
+	#fi
+	
+	# Check if the file exist. If not, create it associated to the type
+	if ! [ -r $PATH_MACHINE_FILE ]; then
+			create_volume $NOM_MACHINE $TYPE_MACHINE
+			if [ $? -eq 1 ]; then
+				echo "Machine type unknown... Exiting"
+				exit 1
+			fi
+	fi
+
+	# Create the volume argument of the bhyve command
+	VOLUME="-s 1:0,virtio-blk,${PATH_MACHINE_FILE}"
+    
+	# Create the network argument(s) of the bhyve command
+	count=0
+	for INTERFACE in ${INTERFACES_MACHINE}; do
+		SWITCH=$(echo $INTERFACE |  cut -d ":" -f 5 | sed -n '1,$s/p[0-9]*$//p')
+		exist_switch $SWITCH
+		if [ $? -eq 0 ]; then
+			echo Create switch $SWITCH
+			ifconfig bridge create name $SWITCH > /dev/null
+			ifconfig $SWITCH up  > /dev/null
+		#	if [ "$SWITCH" = "$EXTERNAL_SWITCH1" ]; then
+		#                ifconfig ${EXTERNAL_SWITCH1} inet ${EXTERNAL_SWITCH1_IP4} netmask ${EXTERNAL_SWITCH1_IP4_MASK}  > /dev/null
+		#	fi
+		fi
+		exist_port $INTERFACE
+		if [ $? -eq 0 ]; then
+			echo Create port switch $INTERFACE
+			ifconfig tap create name $INTERFACE > /dev/null
+			ifconfig $SWITCH addm $INTERFACE > /dev/null
+		else
+			echo "Error the port $INTERFACE already exist ! Existing..."
+			nbr_port_switch $SWITCH
+			if [ $? -eq 0 ]; then
+				ifconfig $SWITCH destroy
+			fi
+			exit 1
+		fi
+		INTERFACE=$($INT2TAP_BIN -i $INTERFACE)
+		NETWORK="${NETWORK}-s 2:${count},virtio-net,${INTERFACE} "
+		count=$(expr $count + 1)
+	done
+	
+	# Create the console port of the machine
+	num_console
+	NUM=$?
+	CONSOLE="-s 31,lpc -l com1,/dev/nmdm${NUM}A"
+	
+	# Load Command in case of type
+	if [ ! "$PATH_MACHINE_MAP_FILE" = "0" ]; then
+		# Create the bhyve load command for debian
+		BHYVE_LOAD="grub-bhyve -c /dev/null -m ${PATH_MACHINE_MAP_FILE} -r hd0,msdos1 -M ${MEMORY_MACHINE} ${NOM_MACHINE}"
+	else
+		# Create the bhyve load command
+		BHYVE_LOAD="bhyveload -c /dev/null -m ${MEMORY_MACHINE} -d ${PATH_MACHINE_FILE} ${NOM_MACHINE}"
+	fi
+	#case "$TYPE_MACHINE" in
+	#	DEBIAN_102)	# Create the bhyve load command for debian
+	#			BHYVE_LOAD="grub-bhyve -c /dev/null -m ${PATH_MACHINE_MAP_FILE} -r hd0,msdos1 -M ${MEMORY_MACHINE} ${NOM_MACHINE}";;
+	#	*)		# Create the bhyve load command
+	#			BHYVE_LOAD="bhyveload -c /dev/null -m ${MEMORY_MACHINE} -d ${PATH_MACHINE_FILE} ${NOM_MACHINE}";;
+	#esac
+	     
+	# Create the bhyve run command
+	BHYVE_CMD="bhyve -c 1 -m ${MEMORY_MACHINE} -A -H -P -s 0:0,hostbridge ${VOLUME} ${NETWORK} ${CONSOLE} ${NOM_MACHINE}"
+
+	# Load and wait the PID
+	$BHYVE_LOAD &
+	PID=$!
+	wait $PID
+
+	# Run the machine
+	$BHYVE_CMD &
+
+	# Create the ser2net link
+	ser2net_create $NOM_MACHINE $NUM $PORT_MACHINE
+	
+	# End of process
+	echo "Machine $NOM_MACHINE load and running..."
+}
+
+unload()
+{
+	NOM_MACHINE=$1
+
+	# check if machine is listed
+	check_machine_listed $NOM_MACHINE
+	if [ $? -eq 1 ]; then
+		echo "Machine is not listed or not passed in parameter... Existing"
+		exit 1
+	fi
+
+	# Get the line paramater of the machine
+	PARAMS_MACHINE=$(grep $1 $FILE_MACHINES)
+
+	# Get the network interfaces list
+	INTERFACES_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 5)
+
+	# check if machine is not loaded
+	check_machine_not_loaded $NOM_MACHINE
+	if [ $? -eq 0 ]; then
+		echo "Machine is not loaded... Existing"
+		exit 1
+	fi
+	
+	# Destroy VM
+	BHYVE_DESTROY="bhyvectl --destroy --vm=${NOM_MACHINE}"
+	$BHYVE_DESTROY
+
+	# Delete network interfaces
+	for INTERFACE in ${INTERFACES_MACHINE}; do
+		SWITCH=$(echo $INTERFACE |  cut -d ":" -f 5 | sed -n '1,$s/p[0-9]*$//p')
+		exist_port $INTERFACE
+		if [ ! $? -eq 0 ]; then
+			echo Destroy port switch $INTERFACE
+			ifconfig $SWITCH deletem $INTERFACE > /dev/null
+			ifconfig $INTERFACE destroy > /dev/null
+		fi
+		if [ ! "$SWITCH" = "$EXTERNAL_SWITCH1" ]; then
+			NBR_MEMBER=$(ifconfig $SWITCH | grep member | wc -l)
+			if [ $NBR_MEMBER -eq 0 ]; then
+				echo Destroy switch $SWITCH
+				ifconfig $SWITCH destroy > /dev/null
+			fi
+		fi
+	done
+
+	# Destroy ser2net session
+	ser2net_destroy $NOM_MACHINE
+	
+	# End of process
+	echo "Machine $NOM_MACHINE stopped and unloaded..."
+}
+
+reload()
+{
+	NOM_MACHINE=$1
+	unload $NOM_MACHINE
+	load $NOM_MACHINE
+}
+
+
+# Check load, unload or status paramaters
+if ! [ "$1" = "load" ] && ! [ "$1" = "unload" ] && ! [ "$1" = "status" ]; then
+        echo "Bad main parameter \"$1\"... Exiting"
+		usage
+        exit 1
+fi
+
+$1 $MYMACHINE
