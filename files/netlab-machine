@@ -1,5 +1,30 @@
 #!/bin/sh
-#set -x
+
+usage() {
+		echo "netlab-machine -h -m <machine> load | unload | status"
+		echo "-h : print this message"
+		echo "-v : verbose mode"
+		echo "-m <machine> : create or delete the machine in parameter"
+		echo "load : loading operations"
+		echo "unload : unloading operations"
+		echo "status : unloading operations"
+}
+
+##########################
+## Options parsing section
+##########################
+while getopts "vlhm:" opt
+do
+        case "$opt" in
+		v) set -x;;
+		l) STATUS_LIGHT=1;;
+                m) MYMACHINE=${OPTARG};;
+                h) usage
+                   exit 1;;
+        esac
+done
+shift $(($OPTIND - 1))
+
 ## Global variables 
 PATH_MACHINE="/usr/local/etc/netlab"
 PATH_RUN="/var/run/netlab"
@@ -15,29 +40,6 @@ SER2NET_TIMEOUT="300"
 INT2TAP_BIN="int2tap"
 #. ${PATH_SWITCH}/switches.conf
 . ${FILE_INTERCO}
-
-##########################
-## Options parsing section
-##########################
-while getopts "lhm:" opt
-do
-        case "$opt" in
-		l) STATUS_LIGHT=1;;
-                m) MYMACHINE=${OPTARG};;
-                h) usage
-                   exit 1;;
-        esac
-done
-shift $(($OPTIND - 1))
-
-usage() {
-		echo "netlab-machine -h -m <machine> load | unload | status"
-		echo "-h : print this message"
-		echo "-m <machine> : create or delete the machine in parameter"
-		echo "load : loading operations"
-		echo "unload : unloading operations"
-		echo "status : unloading operations"
-}
 
 ####################
 ## Check functions
@@ -112,10 +114,11 @@ num_console()
 ###########################
 create_volume()
 {
-	TYPE_VM=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f2 -d ':')
+	TYPE_VM=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f1 -d ':')
+	TYPE_FILE=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f2 -d ':')
 	TYPE_MAP=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f3 -d ':')
-	if [ -z "$TYPE_VM" ]; then
-		cp $PATH_TEMPLATES/$TYPE_VM $PATH_REPO/$1.img
+	if [ ! "$TYPE_VM" == "" ]; then
+		cp $PATH_TEMPLATES/$TYPE_FILE $PATH_REPO/$1.img
 		if [ "$TYPE_MAP" = "yes" ]; then
 			echo "(hd0) ${PATH_REPO}/$1.img" > $PATH_REPO/$1.map
 		fi
@@ -226,22 +229,21 @@ load()
 
 	# Make the image path and name 
 	PATH_MACHINE_FILE="${PATH_REPO}/${NOM_MACHINE}.img"
+	
+	# Check if the file exist. If not, create it associated to the type
+	if ! [ -r $PATH_MACHINE_FILE ]; then
+		create_volume $NOM_MACHINE $TYPE_MACHINE
+		if [ $? -eq 1 ]; then
+			echo "Machine type unknown... Exiting"
+			exit 1
+		fi
+	fi
+	
+	# Test if map file exist
 	if [ -r "${PATH_REPO}/${NOM_MACHINE}.map" ]; then
 		PATH_MACHINE_MAP_FILE="${PATH_REPO}/${NOM_MACHINE}.map"
 	else
 		PATH_MACHINE_MAP_FILE=0
-	fi
-	#if [ "$TYPE_MACHINE" = "DEBIAN_102" ]; then
-	#	PATH_MACHINE_MAP_FILE="${PATH_REPO}/${NOM_MACHINE}.map"
-	#fi
-	
-	# Check if the file exist. If not, create it associated to the type
-	if ! [ -r $PATH_MACHINE_FILE ]; then
-			create_volume $NOM_MACHINE $TYPE_MACHINE
-			if [ $? -eq 1 ]; then
-				echo "Machine type unknown... Exiting"
-				exit 1
-			fi
 	fi
 
 	# Create the volume argument of the bhyve command
