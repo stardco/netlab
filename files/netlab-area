@@ -9,9 +9,10 @@ MACHINE_BIN="netlab-machine"
 ##########################
 ## Options parsing section
 ##########################
-while getopts "a:h" opt
+while getopts "va:h" opt
 do
         case "$opt" in
+		v) set -x;;
                 a) MYAREA=${OPTARG};;
                 h) usage
                    exit 1;;
@@ -22,10 +23,12 @@ shift $(($OPTIND - 1))
 usage() {
                 echo "netlab-area -h -a <area> load | unload | reload | status"
                 echo "-h : print this message"
+		echo "-v : verbose mode"
                 echo "-a <area> : select a specific area"
                 echo "load : loading operations"
                 echo "unload : unloading operations"
-				echo "reload : reloading operations"
+		echo "reload : reloading operations"
+		echo "status : status of all machines on one or all areas"
 }
 
 ####################
@@ -54,10 +57,8 @@ load()
 	for AREA in $LISTE_AREA; do
 		echo "Area : $AREA"
 		PARAMS_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$AREA")
-		GATEWAY=$(echo $PARAMS_AREA | cut -d ":" -f 2)
-		echo "loading gateway $GATEWAY"
-		$MACHINE_BIN -m $GATEWAY load
-		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 3); do
+		MACHINES=$(echo $PARAMS_AREA | cut -d ":" -f 2)
+		for MACHINE in $MACHINES; do
 			echo "Loading machine $MACHINE"
 			$MACHINE_BIN -m $MACHINE load
 		done
@@ -78,15 +79,20 @@ unload()
 	for AREA in $LISTE_AREA; do
 		echo "Area : $AREA"
 		PARAMS_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$AREA")
-		GATEWAY=$(echo $PARAMS_AREA | cut -d ":" -f 2)
-		echo "Unloading gateway $GATEWAY"
-		$MACHINE_BIN -m $GATEWAY unload
-		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 3); do
+		MACHINES=$(echo $PARAMS_AREA | cut -d ":" -f 2)
+		for MACHINE in $MACHINES; do
 			echo "Unloading machine $MACHINE"
 			$MACHINE_BIN -l -m $MACHINE unload
 		done
 		echo "====="
 	done
+}
+
+reload()
+{
+	MYAREA=$1
+	unload $MYAREA
+	load $MYAREA
 }
 
 status()
@@ -102,17 +108,19 @@ status()
 	for AREA in $LISTE_AREA;
 	do
 		PARAMS_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$AREA")
+		echo "====="
 		echo "AREA : $AREA"
-		$MACHINE_BIN -m $(echo $PARAMS_AREA | cut -d ":" -f 2) status
-		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 3);
+		printf "%-20s | %-15s | %-5s | %-5s | %-60s | %-30s\n" "NAME" "TYPE" "MEM" "PORT" "INTERFACES" "STATUS"
+		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 2);
 		do
+#			echo -n "$MACHINE : "
 			$MACHINE_BIN -l -m $MACHINE status
 		done
 		echo "====="
 	done
 }
 
-if ! [ "$1" = "load" ] && ! [ "$1" = "unload" ] && ! [ "$1" = "status" ] ; then
+if ! [ "$1" = "load" ] && ! [ "$1" = "unload" ] && ! [ "$1" = "reload" ] && ! [ "$1" = "status" ] ; then
 	echo "Bad main parameter \"$1\"... Exiting"
 	usage
 	exit 1

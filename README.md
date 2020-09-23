@@ -1,6 +1,3 @@
-# netlab
-Virtual network lab on FreeBSD
-
 **1. Introduction**
 
 Netlab is a system to generate quiclky virtual network environment based on FreeBSD or Debian image.
@@ -8,9 +5,7 @@ Netlab is a system to generate quiclky virtual network environment based on Free
 **2. Installation**
 
 To install tape the following commands :
-
 `make install`
-
 Warning ! a script launch the installation of the application ser2net.
 Warning ! You need to activate the following configuration lines :
 - in /etc/sysctl.conf
@@ -60,7 +55,6 @@ If it is a debian, you should add the "yes" to define the use of a map file
 To create a machine, add a machine in /usr/local/etc/netlab/machines.conf
 
 `#NAME:TYPE:MEMORY (in M):PORT:INTERFACES:`
-
 for example : `Internet_GW:BSDRP_196:256:3000:rnb1p1 igwb1p1:`
 
 NAME : name of the machine
@@ -74,7 +68,6 @@ INTERFACES : List of interfaces. They always have to be on the format <switch_na
 To start a machine, use the command netlab-machine :
 
 `netlab-machine -m <machine_name> load`
-
 for example : `netlab-machine -m Internet_GW load`
 
 a <MACHINE_NAME>.img file is created in the "repo" directory
@@ -89,9 +82,6 @@ for example : `netlab-machine -m Internet_GW load`
 
 *  Connection to the machine
 
-Use a telnet to the configured port to connect to the machine 
-
-`telnet <IP of your HOST> <port number>`
 
 *  Stop a machine
 

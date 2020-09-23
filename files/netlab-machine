@@ -1,13 +1,14 @@
 #!/bin/sh
 
 usage() {
-		echo "netlab-machine -h -m <machine> load | unload | status"
+		echo "netlab-machine -h -m <machine> load | unload | reload | status"
 		echo "-h : print this message"
 		echo "-v : verbose mode"
 		echo "-m <machine> : create or delete the machine in parameter"
 		echo "load : loading operations"
 		echo "unload : unloading operations"
-		echo "status : unloading operations"
+		echo "reload : unloading and loading operations"
+		echo "status : status of one or all machines"
 }
 
 ##########################
@@ -38,8 +39,6 @@ FILE_INTERCO="${PATH_INTERCO}/interco.conf"
 SER2NET_FILE="${PATH_RUN}/ser2net_session"
 SER2NET_TIMEOUT="300"
 INT2TAP_BIN="int2tap"
-#. ${PATH_SWITCH}/switches.conf
-. ${FILE_INTERCO}
 
 ####################
 ## Check functions
@@ -96,16 +95,29 @@ exist_port()
   return $test
 }
 
+gateway_switch()
+{
+# Test if the switch is a gateway switch
+# Output return 0 or the physical interface associated
+# Input : $1 = Name of the switch $2 = Pathfilename where to check
+  tstSW=$1
+  fileSW=$2
+  test=$(cat $fileSW | grep $tstSW | cut -f3 -d ":")
+  if [ -z "$test" ]; then
+	  test=0
+  fi
+  echo $test
+}
 
 ######################################
 ## Console number generator function
 ######################################
 num_console()
 {
-		NUMCONSOLE=0
-		while [ -n "$(cat $SER2NET_FILE | cut -d ":" -f 2 | grep $NUMCONSOLE)" ]; do
-				NUMCONSOLE=$(expr $NUMCONSOLE + 1)
-		done
+	NUMCONSOLE=0
+	while [ -n "$(cat $SER2NET_FILE | cut -d ":" -f 2 | grep $NUMCONSOLE)" ]; do
+			NUMCONSOLE=$(expr $NUMCONSOLE + 1)
+	done
         return $NUMCONSOLE;
 }
 
@@ -114,34 +126,83 @@ num_console()
 ###########################
 create_volume()
 {
-	TYPE_VM=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f1 -d ':')
-	TYPE_FILE=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f2 -d ':')
-	TYPE_MAP=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f3 -d ':')
-	if [ ! "$TYPE_VM" == "" ]; then
-		cp $PATH_TEMPLATES/$TYPE_FILE $PATH_REPO/$1.img
-		if [ "$TYPE_MAP" = "yes" ]; then
+	TEMPLATE_NAME=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f1 -d ':')
+	TEMPLATE_TYPE=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f2 -d ':')
+	TEMPLATE_FILE=$(cat ${FILE_TEMPLATES} | grep $2: | cut -f3 -d ':')
+	if [ ! "$TEMPLATE_NAME" == "" ]; then
+		cp $PATH_TEMPLATES/$TEMPLATE_FILE $PATH_REPO/$1.img
+		if [ "$TEMPLATE_TYPE" = "Linux" ]; then
 			echo "(hd0) ${PATH_REPO}/$1.img" > $PATH_REPO/$1.map
 		fi
 		return 0;
 	fi
 	return 1;
-#	TYPE_BSDRP_196="BSDRP-1.96-full-amd64-serial.img"
-#	TYPE_FREEBSD_121="FreeBSD-12.1-RELEASE.img"
-#	TYPE_DEBIAN_102="Debian-10.2.0.img"
-#	TYPE_EINE_095="EINE-0.95-full-amd64.img"
-#	case "$2" in
-#		BSDRP_196)	cp $PATH_TEMPLATES/$TYPE_BSDRP_196 $PATH_REPO/$1.img
-#					return 0;;
-#		FREEBSD_121)	cp $PATH_TEMPLATES/$TYPE_FREEBSD_121 $PATH_REPO/$1.img
-#					return 0;;
-#		EINE_095)	cp $PATH_TEMPLATES/$TYPE_EINE_095 $PATH_REPO/$1.img
-#					return 0;;
-#		DEBIAN_102)	cp $PATH_TEMPLATES/$TYPE_DEBIAN_102 $PATH_REPO/$1.img
-#					echo "(hd0) ${PATH_REPO}/$1.img" > $PATH_REPO/$1.map
-#					return 0;;
-#		*)	return 1;;
-#	esac
 }
+
+create_switch()
+{
+	SWITCH=$1
+	exist_switch $SWITCH
+	if [ $? -eq 0 ]; then
+		echo Create switch $SWITCH
+		ifconfig bridge create name $SWITCH > /dev/null
+		ifconfig $SWITCH up  > /dev/null
+		GATEWAY_INTERFACE=$(gateway_switch $SWITCH $FILE_INTERCO)
+		if [ ! "$GATEWAY_INTERFACE" = "0" ]; then
+			echo Gateway switch $SWITCH
+			ifconfig $SWITCH addm $GATEWAY_INTERFACE > /dev/null
+		fi
+	fi
+}
+
+delete_switch()
+{
+	SWITCH=$1
+	NBR_MEMBER=$(ifconfig $SWITCH | grep member | wc -l)
+	GATEWAY_INTERFACE=$(gateway_switch $SWITCH $FILE_INTERCO)
+	if [ ! "$GATEWAY_INTERFACE" = "0" ] && [ $NBR_MEMBER -eq 1 ]; then
+		echo Gateway switch $SWITCH
+		ifconfig $SWITCH deletem $GATEWAY_INTERFACE > /dev/null	
+		NBR_MEMBER=0
+	fi
+	if [ $NBR_MEMBER -eq 0 ]; then
+		echo Destroy switch $SWITCH
+		ifconfig $SWITCH destroy > /dev/null
+	fi
+}
+
+create_port()
+{
+	INTERFACE=$1
+	SWITCH=$(echo $INTERFACE | sed -n '1,$s/p[0-9]*$//p')
+	exist_port $INTERFACE
+	if [ $? -eq 0 ]; then
+		create_switch $SWITCH
+		echo Create port switch $INTERFACE
+		ifconfig tap create name $INTERFACE > /dev/null
+		ifconfig $SWITCH addm $INTERFACE > /dev/null
+	else
+		echo "Error the port $INTERFACE already exists ! Existing..."
+		exit 1
+	fi
+}
+
+delete_port()
+(
+	INTERFACE=$1
+	SWITCH=$(echo $INTERFACE | sed -n '1,$s/p[0-9]*$//p')
+	exist_port $INTERFACE
+	if [ $? -eq 1 ]; then
+		echo Delete port switch $INTERFACE
+		ifconfig $SWITCH deletem $INTERFACE > /dev/null
+		ifconfig $INTERFACE destroy > /dev/null
+		delete_switch $SWITCH
+	else
+		echo "Error the port $INTERFACE does not exist ! Existing..."
+		exit 1
+	fi
+
+)
 
 #####################
 ## Ser2net functions
@@ -151,17 +212,23 @@ ser2net_create()
         MACH=$1
         COUNTER=$2
         PORT=$3
-		ser2net -C $PORT:telnet:${SER2NET_TIMEOUT}:/dev/nmdm${COUNTER}B
-        PIDSER2NET=$(ps -ax | grep nmdm${COUNTER}B | grep ser2net | sed -e "s/^ *//" | cut -d " " -f 1)
-        echo "${MACH}:${COUNTER}:${PIDSER2NET}" >> $SER2NET_FILE
+	ser2net -C $PORT:telnet:${SER2NET_TIMEOUT}:/dev/nmdm${COUNTER}B
+	if [ $? -eq 0 ]; then
+        	PIDSER2NET=$(ps -ax | grep nmdm${COUNTER}B | grep ser2net | sed -e "s/^ *//" | cut -d " " -f 1)
+        	echo "${MACH}:${COUNTER}:${PIDSER2NET}" >> $SER2NET_FILE
+	else
+		echo "Error in the creation of console link"
+	fi
 }
 
 ser2net_destroy()
 {
         MACH=$1
         PIDSER2NET=$(cat ${SER2NET_FILE} | grep ${MACH} | cut -d ":" -f 3)
-        kill $PIDSER2NET
+	if [ -n $PIDSER2NET ]; then
+        	kill $PIDSER2NET
 		sed -i '' -e "/${MACH}/d" ${SER2NET_FILE}
+	fi
 }
 
 
@@ -172,7 +239,7 @@ status()
 {
 	LISTE_MACHINE=$(grep -v -e "^#" $FILE_MACHINES | grep "$1" | cut -d ":" -f 1)
 	if [ -z $STATUS_LIGHT ]; then
-		echo "NAME:TYPE:PORT:INTERFACES				status"
+		printf "%-20s | %-15s | %-5s | %-5s | %-60s | %-30s\n" "NAME" "TYPE" "MEM" "PORT" "INTERFACES" "STATUS"
 	fi
 	if [ -d "/dev/vmm" ]; then
 		for MACHINE in $LISTE_MACHINE; do
@@ -180,14 +247,14 @@ status()
 			if [ -n "$(ls /dev/vmm | grep "$MACHINE")" ]; then
 				STATUS="loaded "
 			else
-				STATUS="not loaded "
+				STATUS="unloaded "
 			fi
 			if [ -n "$(ps -ax | grep -v "grep" | grep "bhyve: $MACHINE (bhyve)")" ]; then
 				STATUS="$STATUS running"
 			else
-				STATUS="$STATUS not running"
+				STATUS="$STATUS stopped"
 			fi
-			echo "$PARAMS_MACHINE				$STATUS"
+			printf "%-20s | %-15s | %-5s | %-5s | %-60s | %-30s\n" "$MACHINE" "$(echo $PARAMS_MACHINE | cut -f 2 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 3 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 4 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 5 -d ":")" "$STATUS"
 		done
 	else
 		echo "No machine loaded..."
@@ -252,29 +319,7 @@ load()
 	# Create the network argument(s) of the bhyve command
 	count=0
 	for INTERFACE in ${INTERFACES_MACHINE}; do
-		SWITCH=$(echo $INTERFACE |  cut -d ":" -f 5 | sed -n '1,$s/p[0-9]*$//p')
-		exist_switch $SWITCH
-		if [ $? -eq 0 ]; then
-			echo Create switch $SWITCH
-			ifconfig bridge create name $SWITCH > /dev/null
-			ifconfig $SWITCH up  > /dev/null
-		#	if [ "$SWITCH" = "$EXTERNAL_SWITCH1" ]; then
-		#                ifconfig ${EXTERNAL_SWITCH1} inet ${EXTERNAL_SWITCH1_IP4} netmask ${EXTERNAL_SWITCH1_IP4_MASK}  > /dev/null
-		#	fi
-		fi
-		exist_port $INTERFACE
-		if [ $? -eq 0 ]; then
-			echo Create port switch $INTERFACE
-			ifconfig tap create name $INTERFACE > /dev/null
-			ifconfig $SWITCH addm $INTERFACE > /dev/null
-		else
-			echo "Error the port $INTERFACE already exist ! Existing..."
-			nbr_port_switch $SWITCH
-			if [ $? -eq 0 ]; then
-				ifconfig $SWITCH destroy
-			fi
-			exit 1
-		fi
+		create_port $INTERFACE
 		INTERFACE=$($INT2TAP_BIN -i $INTERFACE)
 		NETWORK="${NETWORK}-s 2:${count},virtio-net,${INTERFACE} "
 		count=$(expr $count + 1)
@@ -293,12 +338,6 @@ load()
 		# Create the bhyve load command
 		BHYVE_LOAD="bhyveload -c /dev/null -m ${MEMORY_MACHINE} -d ${PATH_MACHINE_FILE} ${NOM_MACHINE}"
 	fi
-	#case "$TYPE_MACHINE" in
-	#	DEBIAN_102)	# Create the bhyve load command for debian
-	#			BHYVE_LOAD="grub-bhyve -c /dev/null -m ${PATH_MACHINE_MAP_FILE} -r hd0,msdos1 -M ${MEMORY_MACHINE} ${NOM_MACHINE}";;
-	#	*)		# Create the bhyve load command
-	#			BHYVE_LOAD="bhyveload -c /dev/null -m ${MEMORY_MACHINE} -d ${PATH_MACHINE_FILE} ${NOM_MACHINE}";;
-	#esac
 	     
 	# Create the bhyve run command
 	BHYVE_CMD="bhyve -c 1 -m ${MEMORY_MACHINE} -A -H -P -s 0:0,hostbridge ${VOLUME} ${NETWORK} ${CONSOLE} ${NOM_MACHINE}"
@@ -348,20 +387,7 @@ unload()
 
 	# Delete network interfaces
 	for INTERFACE in ${INTERFACES_MACHINE}; do
-		SWITCH=$(echo $INTERFACE |  cut -d ":" -f 5 | sed -n '1,$s/p[0-9]*$//p')
-		exist_port $INTERFACE
-		if [ ! $? -eq 0 ]; then
-			echo Destroy port switch $INTERFACE
-			ifconfig $SWITCH deletem $INTERFACE > /dev/null
-			ifconfig $INTERFACE destroy > /dev/null
-		fi
-		if [ ! "$SWITCH" = "$EXTERNAL_SWITCH1" ]; then
-			NBR_MEMBER=$(ifconfig $SWITCH | grep member | wc -l)
-			if [ $NBR_MEMBER -eq 0 ]; then
-				echo Destroy switch $SWITCH
-				ifconfig $SWITCH destroy > /dev/null
-			fi
-		fi
+		delete_port $INTERFACE
 	done
 
 	# Destroy ser2net session
@@ -380,7 +406,7 @@ reload()
 
 
 # Check load, unload or status paramaters
-if ! [ "$1" = "load" ] && ! [ "$1" = "unload" ] && ! [ "$1" = "status" ]; then
+if ! [ "$1" = "load" ] && ! [ "$1" = "unload" ] && ! [ "$1" = "reload" ] && ! [ "$1" = "status" ]; then
         echo "Bad main parameter \"$1\"... Exiting"
 		usage
         exit 1
