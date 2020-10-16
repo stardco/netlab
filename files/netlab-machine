@@ -239,7 +239,7 @@ status()
 {
 	LISTE_MACHINE=$(grep -v -e "^#" $FILE_MACHINES | grep "$1" | cut -d ":" -f 1)
 	if [ -z $STATUS_LIGHT ]; then
-		printf "%-20s | %-15s | %-5s | %-5s | %-60s | %-30s\n" "NAME" "TYPE" "MEM" "PORT" "INTERFACES" "STATUS"
+		printf "%-20s | %-15s | %-2s | %-5s | %-5s | %-60s | %-25s\n" "NAME" "TYPE" "CPU" "MEM" "PORT" "INTERFACES" "STATUS"
 	fi
 	if [ -d "/dev/vmm" ]; then
 		for MACHINE in $LISTE_MACHINE; do
@@ -254,7 +254,7 @@ status()
 			else
 				STATUS="$STATUS stopped"
 			fi
-			printf "%-20s | %-15s | %-5s | %-5s | %-60s | %-30s\n" "$MACHINE" "$(echo $PARAMS_MACHINE | cut -f 2 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 3 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 4 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 5 -d ":")" "$STATUS"
+			printf "%-20s | %-15s | %-2s | %-5s | %-5s | %-60s | %-25s\n" "$MACHINE" "$(echo $PARAMS_MACHINE | cut -f 2 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 3 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 4 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 5 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 6 -d ":")" "$STATUS"
 		done
 	else
 		echo "No machine loaded..."
@@ -286,13 +286,16 @@ load()
 	TYPE_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 2)
 	
 	# Get the port number 
-	MEMORY_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 3)
+	CPU_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 3)
 	
 	# Get the port number 
-	PORT_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 4)
+	MEMORY_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 4)
+	
+	# Get the port number 
+	PORT_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 5)
 	
 	# Get the network interfaces list
-	INTERFACES_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 5)
+	INTERFACES_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 6)
 
 	# Make the image path and name 
 	PATH_MACHINE_FILE="${PATH_REPO}/${NOM_MACHINE}.img"
@@ -340,7 +343,7 @@ load()
 	fi
 	     
 	# Create the bhyve run command
-	BHYVE_CMD="bhyve -c 1 -m ${MEMORY_MACHINE} -A -H -P -s 0:0,hostbridge ${VOLUME} ${NETWORK} ${CONSOLE} ${NOM_MACHINE}"
+	BHYVE_CMD="bhyve -c ${CPU_MACHINE} -m ${MEMORY_MACHINE} -A -H -P -s 0:0,hostbridge ${VOLUME} ${NETWORK} ${CONSOLE} ${NOM_MACHINE}"
 
 	# Load and wait the PID
 	$BHYVE_LOAD &
@@ -372,7 +375,7 @@ unload()
 	PARAMS_MACHINE=$(grep $1 $FILE_MACHINES)
 
 	# Get the network interfaces list
-	INTERFACES_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 5)
+	INTERFACES_MACHINE=$(echo $PARAMS_MACHINE | cut -d ":" -f 6)
 
 	# check if machine is not loaded
 	check_machine_not_loaded $NOM_MACHINE

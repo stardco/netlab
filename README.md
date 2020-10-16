@@ -67,8 +67,8 @@ If it is a debian, you should add the "yes" to define the use of a map file
 
 To create a machine, add a machine in /usr/local/etc/netlab/machines.conf
 
-`#NAME:TYPE:MEMORY (in M):PORT:INTERFACES:`
-for example : `BSDTST:BSDRP_197:256:3000:rnb1p1 igwb1p1:`
+`#NAME:TYPE:CPU (nbr):MEMORY (in M):PORT:INTERFACES:`
+for example : `BSDTST:BSDRP_197:1:256:3000:rnb1p1 igwb1p1:`
 
 NAME : name of the machine
 TYPE : Type of the machine (describe in templates.conf)
