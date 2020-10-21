@@ -239,7 +239,7 @@ status()
 {
 	LISTE_MACHINE=$(grep -v -e "^#" $FILE_MACHINES | grep "$1" | cut -d ":" -f 1)
 	if [ -z $STATUS_LIGHT ]; then
-		printf "%-20s | %-15s | %-2s | %-5s | %-5s | %-60s | %-25s\n" "NAME" "TYPE" "CPU" "MEM" "PORT" "INTERFACES" "STATUS"
+		printf "%-20s | %-15s | %-3s | %-5s | %-5s | %-60s | %-25s\n" "NAME" "TYPE" "CPU" "MEM" "PORT" "INTERFACES" "STATUS"
 	fi
 	if [ -d "/dev/vmm" ]; then
 		for MACHINE in $LISTE_MACHINE; do
@@ -254,7 +254,7 @@ status()
 			else
 				STATUS="$STATUS stopped"
 			fi
-			printf "%-20s | %-15s | %-2s | %-5s | %-5s | %-60s | %-25s\n" "$MACHINE" "$(echo $PARAMS_MACHINE | cut -f 2 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 3 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 4 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 5 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 6 -d ":")" "$STATUS"
+			printf "%-20s | %-15s | %-3s | %-5s | %-5s | %-60s | %-25s\n" "$MACHINE" "$(echo $PARAMS_MACHINE | cut -f 2 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 3 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 4 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 5 -d ":")" "$(echo $PARAMS_MACHINE | cut -f 6 -d ":")" "$STATUS"
 		done
 	else
 		echo "No machine loaded..."

@@ -110,7 +110,7 @@ status()
 		PARAMS_AREA=$(grep -v -e "^#" $FILE_AREAS | grep "$AREA")
 		echo "====="
 		echo "AREA : $AREA"
-		printf "%-20s | %-15s | %-5s | %-5s | %-60s | %-30s\n" "NAME" "TYPE" "MEM" "PORT" "INTERFACES" "STATUS"
+		printf "%-20s | %-15s | %-3s | %-5s | %-5s | %-60s | %-30s\n" "NAME" "TYPE" "CPU" "MEM" "PORT" "INTERFACES" "STATUS"
 		for MACHINE in $(echo $PARAMS_AREA | cut -d ":" -f 2);
 		do
 #			echo -n "$MACHINE : "
