@@ -1,0 +1,75 @@
+#!/bin/sh
+
+usage() {
+		echo "netlab-connect -m <machine> | list"
+		echo "-h : print this message"
+		echo "-v : verbose mode"
+		echo "-m <machine> : create or delete the machine in parameter"
+		echo "list : list available machines"
+}
+
+##########################
+## Options parsing section
+##########################
+while getopts "vlhm:" opt
+do
+        case "$opt" in
+		v) set -x;;
+                m) MYMACHINE=${OPTARG};;
+                h) usage
+                   exit 1;;
+        esac
+done
+shift $(($OPTIND - 1))
+
+## Global variables 
+PATH_MACHINE="/usr/local/etc/netlab"
+FILE_MACHINES="${PATH_MACHINE}/machines.conf"
+
+####################
+## Check functions
+####################
+check_machine_not_loaded()
+{
+	if [ -d "/dev/vmm" ]; then
+		LOADED_MACHINE=$(ls /dev/vmm | grep $1)
+	else
+		LOADED_MACHINE=""		
+	fi
+	if [ -z "$LOADED_MACHINE" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+####################
+## Main functions
+####################
+connect()
+{
+	check_machine_not_loaded $1
+	if [ "$?" -eq "1" ]; then
+		PORT=$(grep -v -e "^#" $FILE_MACHINES | grep "$1" | cut -d ":" -f 5)
+		echo telnet localhost $PORT
+		echo Press CTRL+$, tape 'quit' and enter to disconnect...
+		telnet localhost $PORT
+	else 
+		echo "Machine not loaded or unrecognized..."
+	fi	
+}
+list()
+{
+	netlab-machine status
+}
+
+# Check load, unload or status paramaters
+if [ "$1" = "list" ]; then
+	$1
+elif ! [ "$1" = "" ]; then
+        echo "Bad main parameter \"$1\"... Exiting"
+		usage
+        exit 1
+else
+	connect $MYMACHINE
+fi
