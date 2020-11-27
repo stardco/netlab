@@ -18,6 +18,7 @@ install: depends int2tap
 	install -m 0750 -o root -g wheel files/netlab-area /usr/local/sbin/
 	install -m 0750 -o root -g wheel files/netlab-machine /usr/local/sbin/
 	install -m 0750 -o root -g wheel files/netlab-interco /usr/local/sbin/
+	install -m 0750 -o root -g wheel files/netlab-connect /usr/local/sbin/
 	if [ -f /usr/local/etc/netlab/machines.conf ]; then\
 		$(cp /usr/local/etc/netlab/machines.conf /usr/local/etc/netlab/machines.conf.old)\
 	fi 
@@ -42,6 +43,7 @@ deinstall:
 	rm /usr/local/sbin/netlab-area
 	rm /usr/local/sbin/netlab-machine
 	rm /usr/local/sbin/netlab-interco
+	rm /usr/local/sbin/netlab-connect
 	rm -r /var/run/netlab
 	echo "ser2net not deinstalled. do pkg remove ser2net to delete it"
 	echo "Configuration file in /usr/local/etc/netlab not removed" 
@@ -55,6 +57,7 @@ reinstall: stop deinstall int2tap depends
 	install -m 0750 -o root -g wheel files/netlab-area /usr/local/sbin/
 	install -m 0750 -o root -g wheel files/netlab-machine /usr/local/sbin/
 	install -m 0750 -o root -g wheel files/netlab-interco /usr/local/sbin/
+	install -m 0750 -o root -g wheel files/netlab-connect /usr/local/sbin/
 
 stop:
 	netlab-area unload
