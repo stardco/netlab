@@ -17,9 +17,20 @@ def usage():
     print ("-m <machine> | -a <area>")
     print("-h : print this message")
 
+def netlab_status(host,vm="", area=""):
+    print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+    if vm:
+        print("VM")
+    elif area:
+        print("Area")
+    else:
+        print("all")       
+
 def main(argv):
     global myVm
+    myVm = ""
     global myArea
+    myArea = ""
     
     try:
         opts, args = getopt.getopt(argv, "hm:a:", ["help", "machine=", "area="])
@@ -37,19 +48,17 @@ def main(argv):
             global status_light
             status_light = 1
         elif opt in ("-m", "--machine"):
-            global myVm
             myVm = arg
         elif opt in ("-a", "--area"):
-            global myArea
-            myVm = arg
+            myArea = arg
          
 if __name__ == "__main__":
     main(sys.argv[2:])
-    command_netlab = sys.args[1]
+    command_netlab = sys.argv[1]
     myHost = Host()     
     if command_netlab == "status":
         print("Status")
-        netlab_status()
+       	netlab_status(myHost,myVm,myArea)
     elif command_netlab == "load":
         print("Load")
     elif command_netlab == "unload":
@@ -65,9 +74,9 @@ if __name__ == "__main__":
 def netlab_status(host,vm="", area=""):
     print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
     if vm:
-        # print VM
+        print("VM")
     elif area:
-        # print Area
+        print("Area")
     else:
         print("all")       
 
