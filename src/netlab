@@ -67,16 +67,3 @@ if __name__ == "__main__":
         print("Reload")
     elif command_netlab == "connect":
         print("Connect")
-
-  
-  
-  
-def netlab_status(host,vm="", area=""):
-    print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
-    if vm:
-        print("VM")
-    elif area:
-        print("Area")
-    else:
-        print("all")       
-
