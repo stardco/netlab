@@ -17,16 +17,16 @@ def usage():
     print ("-m <machine> | -a <area>")
     print("-h : print this message")
 
-def netlab_status(host,vm="", area=""):
+def netlab_status(host,vm_search="", area_search=""):
     print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
-    if vm:
-        theVm = host.get_machine(vm) 
+    if vm_search:
+        theVm = host.get_machine(vm_search) 
         if theVm:
             print(theVm.print_status)
         else:
             print("The machine does not exist...")
-    elif area:
-        theArea = host.get_area(area) 
+    elif area_search:
+        theArea = host.get_area(area_search) 
         if theArea:
             for theVm in theArea.area_vm_list
                 print(theVm.print_status)
