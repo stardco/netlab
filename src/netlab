@@ -22,18 +22,19 @@ def netlab_status(host,vm="", area=""):
     if vm:
         theVm = host.get_machine(vm) 
         if theVm:
-            print(theVm.print_status)
+            print(theVm.print_status())
         else:
             print("The machine does not exist...")
     elif area:
         theArea = host.get_area(area) 
         if theArea:
-            for theVm in theArea.area_vm_list
-                print(theVm.print_status)
+            for theVm in theArea.area_vm_list:
+                print(theVm.print_status())
         else:
             print("The area does not exist...")
     else:
-        print("all")       
+        for theVm in host.machine_list:
+            print(theVm.print_status())
 
 def main(argv):
     global myVm
@@ -66,7 +67,6 @@ if __name__ == "__main__":
     command_netlab = sys.argv[1]
     myHost = Host()     
     if command_netlab == "status":
-        print("Status")
        	netlab_status(myHost,myVm,myArea)
     elif command_netlab == "load":
         print("Load")

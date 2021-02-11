@@ -57,10 +57,11 @@ deinstall:
 reinstall: stop deinstall int2tap depends
 	install -d /usr/local/etc/netlab/repo
 	install -d /usr/local/etc/netlab/templates
+	install -m 0750 -o root -g wheel src/classes/netlab_classes.py /usr/local/lib/python3.7/
 	install -d /var/run/netlab
 	touch /var/run/netlab/ser2net_session
-	install -m 0755 -o root -g wheel src/int2tap /usr/local/sbin/
-	install -m 0750 -o root -g wheel files/netlab-area /usr/local/sbin/
+	install -m 0755 -o root -g wheel src/int2tap/int2tap /usr/local/sbin/
+	install -m 0750 -o root -g wheel src/netlab /usr/local/sbin/
 
 stop:
 	netlab unload

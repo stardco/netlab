@@ -109,8 +109,6 @@ class Host:
                 # Name of the machine
                 name = machine_entry[0]
                 # Type of Machine
-                print(self.template_index(machine_entry[1]))
-                print(self.print_template_list())
                 template = self.template_list[self.template_index(machine_entry[1])]
                 # Number of CPU
                 cpu = machine_entry[2]
@@ -204,7 +202,7 @@ class Host:
             if area_name == area.area_name:
                 res = True
                 break
-        if area_name == area.area_name:
+        if res:
            return area
            
     def area_exists(self, area_name):
@@ -242,7 +240,7 @@ class Host:
             if machine_name == machine.vm_name:
                 res = True
                 break
-        if machine_name == machine.vm_name:
+        if res:
            return machine 
         
     def machine_exists(self, machine_name):
