@@ -197,6 +197,16 @@ class Host:
             template_names = template_names + template.template_name + " "
         return template_names
 
+    def get_area(self, area_name):
+    # Return the Area object if it exists
+        res = False
+        for area in self.area_list:
+            if area_name == area.area_name:
+                res = True
+                break
+        if area_name == area.area_name:
+           return area
+           
     def area_exists(self, area_name):
     # Test if a area exists
         res = False
@@ -225,6 +235,16 @@ class Host:
             area_names = area_names + area.area_name + " "
         return area_names    
 
+    def get_machine(self, machine_name):
+    # Return the Machine object if it exists
+        res = False
+        for machine in self.machine_list:
+            if machine_name == machine.vm_name:
+                res = True
+                break
+        if machine_name == machine.vm_name:
+           return machine 
+        
     def machine_exists(self, machine_name):
     # Test if a machine exists
         res = False

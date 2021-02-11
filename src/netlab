@@ -20,9 +20,18 @@ def usage():
 def netlab_status(host,vm="", area=""):
     print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
     if vm:
-        print("VM")
+        theVm = host.get_machine(vm) 
+        if theVm:
+            print(theVm.print_status)
+        else:
+            print("The machine does not exist...")
     elif area:
-        print("Area")
+        theArea = host.get_area(area) 
+        if theArea:
+            for theVm in theArea.area_vm_list
+                print(theVm.print_status)
+        else:
+            print("The area does not exist...")
     else:
         print("all")       
 
