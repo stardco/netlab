@@ -167,10 +167,10 @@ class Host:
             sw_names = sw_names + sw.sw_name + " "
         return sw_names
 
-   def get_switch(self, switch_name):
+    def get_switch(self, switch_name):
     # Return the Switch object if it exists
         res = False
-        for switch in self.switch_list:
+        for switch in self.sw_list:
             if switch_name == switch.sw_name:
                 res = True
                 break
@@ -467,7 +467,7 @@ class Switch:
     def set_sw(self):
     # Create the switch on the host
         if not self.exists_on_host():
-            cmd = shlex.split("ifconfig bridge create name " + self.sw_name)
+            cmd = shlex.split("ifconfig bridge create name " + self.sw_name + " up")
             result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if result.returncode == 0:
                 res = True

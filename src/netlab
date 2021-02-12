@@ -56,9 +56,9 @@ def netlab_load(host,vm_search="", area_search=""):
             print("Loading",theVm.vm_name,"...")
             theVm.load()
             for thePort in theVm.vm_port_list:
-                theSwitch = self.get_switch(thePort.sw_name)
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
                 if theSwitch:
-                    theSwitch.sw_update()
+                    theSwitch.update_sw()
         else:
             print("The machine does not exist...")
     elif area_search:
@@ -70,9 +70,9 @@ def netlab_load(host,vm_search="", area_search=""):
                     print("Loading",theVm.vm_name,"...")
                     theVm.load()
                     for thePort in theVm.vm_port_list:
-                        theSwitch = self.get_switch(thePort.sw_name)
+                        theSwitch = host.get_switch(thePort.port_associated_sw_name)
                         if theSwitch:
-                            theSwitch.sw_update()
+                            theSwitch.update_sw()
         else:
             theArea = host.get_area(area_search) 
             if theArea:
@@ -81,9 +81,9 @@ def netlab_load(host,vm_search="", area_search=""):
                     print("Loading",theVm.vm_name,"...")
                     theVm.load()
                     for thePort in theVm.vm_port_list:
-                        theSwitch = self.get_switch(thePort.sw_name)
+                        theSwitch = host.get_switch(thePort.port_associated_sw_name)
                         if theSwitch:
-                            theSwitch.sw_update()
+                            theSwitch.update_sw()
             else:
                 print("The area does not exist...")
     else:
@@ -91,9 +91,9 @@ def netlab_load(host,vm_search="", area_search=""):
             print("Loading",theVm.vm_name,"...")
             theVm.load()
             for thePort in theVm.vm_port_list:
-                theSwitch = self.get_switch(thePort.sw_name)
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
                 if theSwitch:
-                    theSwitch.sw_update()
+                    theSwitch.update_sw()
 
 
 def netlab_unload(host,vm_search="", area_search=""):
@@ -104,9 +104,9 @@ def netlab_unload(host,vm_search="", area_search=""):
             print("Unloading",theVm.vm_name,"...")
             theVm.unload()
             for thePort in theVm.vm_port_list:
-                theSwitch = self.get_switch(thePort.sw_name)
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
                 if theSwitch:
-                    theSwitch.sw_update()
+                    theSwitch.update_sw()
         else:
             print("The machine does not exist...")
     elif area_search:
@@ -118,9 +118,9 @@ def netlab_unload(host,vm_search="", area_search=""):
                     print("Unloading",theVm.vm_name,"...")
                     theVm.unload()
                     for thePort in theVm.vm_port_list:
-                        theSwitch = self.get_switch(thePort.sw_name)
+                        theSwitch = host.get_switch(thePort.port_associated_sw_name)
                         if theSwitch:
-                            theSwitch.sw_update()
+                            theSwitch.update_sw()
         else:
             theArea = host.get_area(area_search) 
             if theArea:
@@ -129,9 +129,9 @@ def netlab_unload(host,vm_search="", area_search=""):
                     print("Unloading",theVm.vm_name,"...")
                     theVm.unload()
                     for thePort in theVm.vm_port_list:
-                        theSwitch = self.get_switch(thePort.sw_name)
+                        theSwitch = host.get_switch(thePort.port_associated_sw_name)
                         if theSwitch:
-                            theSwitch.sw_update()
+                            theSwitch.update_sw()
             else:
                 print("The area does not exist...")
     else:
@@ -139,9 +139,9 @@ def netlab_unload(host,vm_search="", area_search=""):
             print("Unloading",theVm.vm_name,"...")
             theVm.unload()
             for thePort in theVm.vm_port_list:
-                theSwitch = self.get_switch(thePort.sw_name)
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
                 if theSwitch:
-                    theSwitch.sw_update()
+                    theSwitch.update_sw()
 
 def netlab_reload(host,vm_search="", area_search=""):
     # Reload part
@@ -151,9 +151,9 @@ def netlab_reload(host,vm_search="", area_search=""):
             print("Unloading",theVm.vm_name,"...")
             theVm.reload()
             for thePort in theVm.vm_port_list:
-                theSwitch = self.get_switch(thePort.sw_name)
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
                 if theSwitch:
-                    theSwitch.sw_update()
+                    theSwitch.update_sw()
         else:
             print("The machine does not exist...")
     elif area_search:
@@ -165,9 +165,9 @@ def netlab_reload(host,vm_search="", area_search=""):
                     print("Unloading",theVm.vm_name,"...")
                     theVm.reload()
                     for thePort in theVm.vm_port_list:
-                        theSwitch = self.get_switch(thePort.sw_name)
+                        theSwitch = host.get_switch(thePort.port_associated_sw_name)
                         if theSwitch:
-                            theSwitch.sw_update()
+                            theSwitch.update_sw()
         else:
             theArea = host.get_area(area_search) 
             print("{:<20} | {:<60}".format("NAME","LIST OF MACHINE"))
@@ -180,9 +180,9 @@ def netlab_reload(host,vm_search="", area_search=""):
                     print("Unloading",theVm.vm_name,"...")
                     theVm.reload()
                     for thePort in theVm.vm_port_list:
-                        theSwitch = self.get_switch(thePort.sw_name)
+                        theSwitch = host.get_switch(thePort.port_associated_sw_name)
                         if theSwitch:
-                            theSwitch.sw_update()
+                            theSwitch.update_sw()
             else:
                 print("The area does not exist...")
     else:
@@ -190,9 +190,9 @@ def netlab_reload(host,vm_search="", area_search=""):
             print("Unloading",theVm.vm_name,"...")
             theVm.reload()
             for thePort in theVm.vm_port_list:
-                theSwitch = self.get_switch(thePort.sw_name)
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
                 if theSwitch:
-                    theSwitch.sw_update()
+                    theSwitch.update_sw()
 
 def main(argv):
     global myVm
