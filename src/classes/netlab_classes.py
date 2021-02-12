@@ -167,6 +167,16 @@ class Host:
             sw_names = sw_names + sw.sw_name + " "
         return sw_names
 
+   def get_switch(self, switch_name):
+    # Return the Switch object if it exists
+        res = False
+        for switch in self.switch_list:
+            if switch_name == switch.sw_name:
+                res = True
+                break
+        if res:
+           return switch 
+           
     def template_exists(self, template_name):
     # Test if a template exists
         res = False
