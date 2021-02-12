@@ -8,33 +8,150 @@ from netlab_classes import *
 ##################
 
 def usage():
+    # Print usage
     print("netlab load | unload | reload | status | connect -h --help")
     print("load, unload, reload options")
     print("load : loading operations")
     print("unload : unloading operations")
     print("reload : unloading and loading operations")
     print("status : status of one machine, one area or all machines")
-    print ("-m <machine> | -a <area>")
+    print ("-m <machine> | -a <area |all>")
     print("-h : print this message")
 
 def netlab_status(host,vm_search="", area_search=""):
-    print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+    # Status part
     if vm_search:
+        print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
         theVm = host.get_machine(vm_search) 
         if theVm:
             print(theVm.print_status())
         else:
             print("The machine does not exist...")
     elif area_search:
-        theArea = host.get_area(area_search) 
-        if theArea:
-            for theVm in theArea.area_vm_list:
-                print(theVm.print_status())
+        if area_search == "all":
+            print("{:<20} | {:<200}".format("NAME","LIST OF MACHINE")
+            for theArea in host.area_list:
+                print("{:<20} | {:<200}".format(theArea.area_name,theArea.print_area_vm_list())
         else:
-            print("The area does not exist...")
-    else:
-        for theVm in host.machine_list:
-            print(theVm.print_status())
+            theArea = host.get_area(area_search) 
+            print("{:<20} | {:<200}".format("NAME","LIST OF MACHINE")
+            if theArea:
+                print("{:<20} | {:<200}".format(theArea.area_name,theArea.print_area_vm_list())
+                print("==========")
+                print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+                for theVm in theArea.area_vm_list:
+                    print(theVm.print_status())
+            else:
+                print("The area does not exist...")
+        else:
+            for theVm in host.machine_list:
+                print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+                print(theVm.print_status())
+
+def netlab_load(host,vm_search="", area_search=""):
+    # Load part
+    if vm_search:
+        theVm = host.get_machine(vm_search) 
+        if theVm:
+            print("Loading",theVM.vm_name,"...")
+            theVm.load()
+        else:
+            print("The machine does not exist...")
+    elif area_search:
+        if area_search == "all":
+            print("Loading all areas...")
+            for theArea in host.area_list:
+                print("Loading",theArea.area_name,"...")
+                for theVm in the Area.area_vm_list:
+                    print("Loading",theVM.vm_name,"...")
+                    theVm.load()
+        else:
+            theArea = host.get_area(area_search) 
+            print("{:<20} | {:<200}".format("NAME","LIST OF MACHINE")
+            print("{:<20} | {:<200}".format(theArea.area_name,theArea.print_area_vm_list())
+            print("==========")
+            print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+            if theArea:
+                print("Loading",theArea.area_name,"...")
+                for theVm in the Area.area_vm_list:
+                    print("Loading",theVM.vm_name,"...")
+                    theVm.load()
+            else:
+                print("The area does not exist...")
+        else:
+            for theVm in host.machine_list:
+                print("Loading",theVM.vm_name,"...")
+                theVm.load()
+
+def netlab_unload(host,vm_search="", area_search=""):
+    # Unload part
+    if vm_search:
+        theVm = host.get_machine(vm_search) 
+        if theVm:
+            print("Unloading",theVM.vm_name,"...")
+            theVm.unload()
+        else:
+            print("The machine does not exist...")
+    elif area_search:
+        if area_search == "all":
+            print("Unloading all areas...")
+            for theArea in host.area_list:
+                print("Unloading",theArea.area_name,"...")
+                for theVm in the Area.area_vm_list:
+                    print("Unloading",theVM.vm_name,"...")
+                    theVm.unload()
+        else:
+            theArea = host.get_area(area_search) 
+            print("{:<20} | {:<200}".format("NAME","LIST OF MACHINE")
+            print("{:<20} | {:<200}".format(theArea.area_name,theArea.print_area_vm_list())
+            print("==========")
+            print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+            if theArea:
+                print("Unloading",theArea.area_name,"...")
+                for theVm in the Area.area_vm_list:
+                    print("Unloading",theVM.vm_name,"...")
+                    theVm.unload()
+            else:
+                print("The area does not exist...")
+        else:
+            for theVm in host.machine_list:
+                print("Unloading",theVM.vm_name,"...")
+                theVm.unload()
+
+def netlab_reload(host,vm_search="", area_search=""):
+    # Reload part
+    if vm_search:
+        theVm = host.get_machine(vm_search) 
+        if theVm:
+            print("Unloading",theVM.vm_name,"...")
+            theVm.reload()
+        else:
+            print("The machine does not exist...")
+    elif area_search:
+        if area_search == "all":
+            print("Unloading all areas...")
+            for theArea in host.area_list:
+                print("Unloading",theArea.area_name,"...")
+                for theVm in the Area.area_vm_list:
+                    print("Unloading",theVM.vm_name,"...")
+                    theVm.reload()
+        else:
+            theArea = host.get_area(area_search) 
+            print("{:<20} | {:<200}".format("NAME","LIST OF MACHINE")
+            print("{:<20} | {:<200}".format(theArea.area_name,theArea.print_area_vm_list())
+            print("==========")
+            print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+            if theArea:
+                print("Unloading",theArea.area_name,"...")
+                for theVm in the Area.area_vm_list:
+                    print("Unloading",theVM.vm_name,"...")
+                    theVm.reload()
+            else:
+                print("The area does not exist...")
+        else:
+            for theVm in host.machine_list:
+                print("Unloading",theVM.vm_name,"...")
+                theVm.reload()
 
 def main(argv):
     global myVm
@@ -69,10 +186,10 @@ if __name__ == "__main__":
     if command_netlab == "status":
        	netlab_status(myHost,myVm,myArea)
     elif command_netlab == "load":
-        print("Load")
+       	netlab_load(myHost,myVm,myArea)
     elif command_netlab == "unload":
-        print("Unload")
+       	netlab_unload(myHost,myVm,myArea)
     elif command_netlab == "reload":
-        print("Reload")
+        netlab_reload(myHost,myVm,myArea)
     elif command_netlab == "connect":
         print("Connect")
