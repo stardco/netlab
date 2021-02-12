@@ -67,10 +67,6 @@ def netlab_load(host,vm_search="", area_search=""):
                     theVm.load()
         else:
             theArea = host.get_area(area_search) 
-            print("{:<20} | {:<60}".format("NAME","LIST OF MACHINE"))
-            print("{:<20} | {:<60}".format(theArea.area_name,theArea.print_area_vm_list()))
-            print("==========")
-            print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
             if theArea:
                 print("Loading",theArea.area_name,"...")
                 for theVm in theArea.area_vm_list:
@@ -102,10 +98,6 @@ def netlab_unload(host,vm_search="", area_search=""):
                     theVm.unload()
         else:
             theArea = host.get_area(area_search) 
-            print("{:<20} | {:<60}".format("NAME","LIST OF MACHINE"))
-            print("{:<20} | {:<60}".format(theArea.area_name,theArea.print_area_vm_list()))
-            print("==========")
-            print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
             if theArea:
                 print("Unloading",theArea.area_name,"...")
                 for theVm in theArea.area_vm_list:

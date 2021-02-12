@@ -408,7 +408,7 @@ class Machine:
     def reload(self):
     # Unload and load the machine on the host
         self.unload()
-        time.sleep(1)
+        time.sleep(2)
         self.load()
 
 class Switch:
@@ -658,21 +658,21 @@ class Console:
                 restart = False
                 
             while restart:
+                restart = False
                 for entry in file_entries:
-                    if entry.split(":")[1] == str(num_console) :
+                    if int(entry.split(":")[1]) == num_console:
                         num_console = num_console + 1 
                         restart = True
                         break
-                    restart = False
 
             self.console_index = num_console
             cmd = shlex.split("ser2net -C " + str(self.console_port) + ":telnet:" + str(self.console_timeout) + ":/dev/nmdm" + str(self.console_index) + "B")
             res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if res.returncode == 0:
-                cmd = "ps -ax | grep nmdm" + str(self.console_index) + "B | grep ser2net | grep -v grep | cut -d \" \" -f 1"
-                self.console_pid = subprocess.getoutput(cmd)
+                cmd = "ps -ax | grep nmdm" + str(self.console_index) + "B | grep ser2net | grep -v grep"
+                self.console_pid = subprocess.getoutput(cmd).lstrip().split(" ")[0]
                 f = open(self.console_run_file,"a")
-                f.writelines([self.console_vm_name + ":" + str(self.console_index) + ":" + str(self.console_pid)])
+                f.writelines([self.console_vm_name + ":" + str(self.console_index) + ":" + str(self.console_pid) + "\n"])
                 f.close()
             else:
                 print("Error in the creation of console link")
