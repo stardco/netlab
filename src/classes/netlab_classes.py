@@ -92,7 +92,7 @@ class Host:
                 for machine in area_entry[1]:
                     index = self.machine_index(machine)
                     if not index == -1:
-                        vm_list.append(self.machine_list[self.machine_index(index)])
+                        vm_list.append(self.get_machine(machine))
                 self.area_list.append(Area(area_entry[0], vm_list)) 
  
     def set_list_machine(self):

@@ -64,4 +64,4 @@ reinstall: stop deinstall int2tap depends
 	install -m 0750 -o root -g wheel src/netlab /usr/local/sbin/
 
 stop:
-	netlab unload
+	#netlab unload
