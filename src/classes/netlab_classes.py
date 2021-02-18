@@ -346,10 +346,6 @@ class Machine:
                 if result == 1:
                     datafiles_good = False   
         return datafiles_good
-
-    def connect_vm(self):
-    # Make a telnet conection on the console port
-        print("On the console port...")
     
     def int2tap(self, port_name): 
     # Return a String with the resule of the int2tap binary
@@ -692,7 +688,17 @@ class Console:
                 print("Error in the creation of console link")
                 result = False
         return result
-         
+    
+    def connect_console(self):
+    # Make a telnet conection on the console port
+        if self.is_on_run_file():
+            print("The port is active. Tape CTRL + $ and quit to exit telnet")
+            telnet_cmd = "telnet localhost " + str(self.console_port)
+            p_cmd = subprocess.Popen(shlex.split(telnet_cmd),close_fds=True)
+        else:
+            print("The port of",self.console_vm_name,"is not active")
+           
+            
 class Area:
     def __init__(self, name, vm_list):
     # Initialization of the Area

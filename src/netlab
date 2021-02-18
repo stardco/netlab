@@ -198,7 +198,7 @@ def netlab_connect(host,vm_name=""):
     if vm_name:
         theVM = host.get_machine(vm_name)
         if theVM:
-            theVM.connect_vm()
+            theVM.vm_console.connect_console()
         else:
             print("The machine does not exist...")
     else:
