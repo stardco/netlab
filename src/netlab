@@ -205,7 +205,7 @@ def netlab_connect(host,vm_name=""):
         print("List of available connections")
         print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
         for theVm in host.machine_list:
-            if theVM.vm.loaded and theVm.vm.running:
+            if theVm.vm_loaded and theVm.vm_running:
                 print(theVm.print_status())
 
 def main(argv):
