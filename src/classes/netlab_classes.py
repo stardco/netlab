@@ -694,7 +694,8 @@ class Console:
         if self.is_on_run_file():
             print("The port is active. Tape CTRL + $ and quit to exit telnet")
             telnet_cmd = "telnet localhost " + str(self.console_port)
-            p_cmd = subprocess.Popen(shlex.split(telnet_cmd),close_fds=True)
+            p_cmd = subprocess.Popen(shlex.split(telnet_cmd))
+            p_cmd.wait()
         else:
             print("The port of",self.console_vm_name,"is not active")
            
