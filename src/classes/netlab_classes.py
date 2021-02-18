@@ -407,6 +407,7 @@ class Machine:
         if self.vm_loaded:
             bhyve_destroy = "bhyvectl --destroy --vm=" + self.vm_name
             p_destroy = subprocess.Popen(shlex.split(bhyve_destroy))
+            p_destroy.wait()
 
         # Shut the network part
         for port in self.vm_port_list:
