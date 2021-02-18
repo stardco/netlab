@@ -194,6 +194,20 @@ def netlab_reload(host,vm_search="", area_search=""):
                 if theSwitch:
                     theSwitch.update_sw()
 
+def netlab_connect(host,vm_name=""):
+    if vm_name:
+        theVM = host.get_machine(vm_name)
+        if theVM:
+            theVM.connect_vm()
+        else:
+            print("The machine does not exist...")
+    else:
+        print("List of available connections")
+        print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+        for theVm in host.machine_list:
+            if theVM.vm.loaded and theVm.vm.running:
+                print(theVm.print_status())
+
 def main(argv):
     global myVm
     myVm = ""
@@ -233,4 +247,4 @@ if __name__ == "__main__":
     elif command_netlab == "reload":
         netlab_reload(myHost,myVm,myArea)
     elif command_netlab == "connect":
-        print("Connect")
+        netlab_connect(myHost,myVm)

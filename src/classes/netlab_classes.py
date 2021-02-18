@@ -315,7 +315,7 @@ class Machine:
         for port in self.vm_port_list:
             res = res + port.port_name + " "
         return res
-        
+    
     def set_status(self):
     # Check and update the status of the machine in the host
         if os.path.exists("/dev/vmm/" + self.vm_name):
@@ -346,6 +346,10 @@ class Machine:
                 if result == 1:
                     datafiles_good = False   
         return datafiles_good
+
+    def connect_vm(self):
+    # Make a telnet conection on the console port
+        print("On the console port...")
     
     def int2tap(self, port_name): 
     # Return a String with the resule of the int2tap binary
