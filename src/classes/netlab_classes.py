@@ -42,7 +42,7 @@ class Host:
             template_entry = template_entry.replace("\n","")
             template_entry = template_entry.split(":")
             if not template_entry[0][0] == "#" and not template_entry[0][0] == "" and not self.template_exists(template_entry[0]):
-                self.template_list.append(Template(template_entry[0], template_entry[1], self.path_templates + template_entry[2]))
+                self.template_list.append(Template(template_entry[0], template_entry[1], self.path_templates + "/" + template_entry[2]))
  
     def set_sw_list(self):
     # Parse the file define in file_conf_switches and populate sw_list
@@ -331,6 +331,7 @@ class Machine:
     # If needed, It checks th datafile (.img) of the vm
         datafiles_good = True
         if not os.path.exists(self.vm_datafile):
+            print(self.vm_template.template_image)
             cmd = shlex.split("cp " + self.vm_template.template_image + " " + self.vm_datafile)
             result = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             result.wait()
