@@ -331,7 +331,6 @@ class Machine:
     # If needed, It checks th datafile (.img) of the vm
         datafiles_good = True
         if not os.path.exists(self.vm_datafile):
-            print(self.vm_template.template_image)
             cmd = shlex.split("cp " + self.vm_template.template_image + " " + self.vm_datafile)
             result = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             result.wait()
@@ -417,10 +416,12 @@ class Machine:
         # Shut of the console part
         self.vm_console.destroy_console()
         
+        # Update the machine status
+        self.set_status()
+
     def reload(self):
     # Unload and load the machine on the host
         self.unload()
-        time.sleep(2)
         self.load()
 
 class Switch:
