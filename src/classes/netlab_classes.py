@@ -353,15 +353,18 @@ class Machine:
         res = subprocess.getoutput(cmd)
         return res
         
-    def load(self):
+    def load(self,verbose=True):
     # Load the machine on the host
+        if verbose:
+            print("Loading",self.vm_name,"...",end=' ',flush=True)
         network = ""
         volume = ""
         console = ""
         go_to_load = True
         # Check if the machine is already loaded
         if self.vm_loaded:
-            print("Machine already loaded")
+            if verbose:
+                print("Machine already loaded")
             go_to_load = False
         # Creation of the network part of the command
         if go_to_load:
@@ -376,6 +379,8 @@ class Machine:
             if self.set_vm_datafile():
                 volume = "-s 1:0,virtio-blk," + self.vm_datafile
             else:
+                if verbose:
+                    print("KO, error in data file definition")
                 go_to_load = False
 
         # Creation of the console part of the command
@@ -383,6 +388,8 @@ class Machine:
             if self.vm_console.create_console():
                 console = "-s 31,lpc -l com1,/dev/nmdm" + str(self.vm_console.console_index) + "A"
             else:
+                if verbose:
+                    print("KO, error console definition")
                 go_to_load = False         
      
         # Load the vm
@@ -392,13 +399,18 @@ class Machine:
             else:
                 bhyve_load = "bhyveload -c /dev/null -m "+ str(self.vm_mem) + " -d " + self.vm_datafile + " " + self.vm_name   
             bhyve_cmd = "bhyve -c " + str(self.vm_cpu) + " -m " + str(self.vm_mem) + " -A -H -P -s 0:0,hostbridge " + volume + " " + network + " " + console + " " + self.vm_name
+            
             p_load = subprocess.Popen(shlex.split(bhyve_load))
             p_load.wait()
             p_cmd = subprocess.Popen(shlex.split(bhyve_cmd),close_fds=True)
-            
-    def unload(self):
+            if verbose:
+                print("OK")
+                
+    def unload(self,verbose=True):
     # Unload the machine on the host
-         # Check if the machine is already loaded
+        if verbose:
+            print("Unloading",self.vm_name,"...",end=' ',flush=True)
+        # Check if the machine is already loaded
         if self.vm_running:
             bhyve_stop = "bhyvectl --force-poweroff --vm=" + self.vm_name
             p_stop = subprocess.Popen(shlex.split(bhyve_stop))
@@ -418,11 +430,21 @@ class Machine:
         
         # Update the machine status
         self.set_status()
-
-    def reload(self):
-    # Unload and load the machine on the host
-        self.unload()
-        self.load()
+        if verbose:
+            print("OK")
+            
+    def reload(self,verbose=True):
+    # Unload and load the machine on the host if it is already loaded
+        if verbose:
+            print("Reloading",self.vm_name,"...",end=' ',flush=True)      
+        if self.vm_running or self.vm_loaded:
+            self.unload(verbose=False)
+            self.load(verbose=False)
+            if verbose:
+                print("OK")
+        else:
+            if verbose:
+                print("Machine not loaded")
 
 class Switch:
     def __init__(self, switch_name, switch_type = "L2"):
