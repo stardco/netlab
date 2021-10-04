@@ -32,7 +32,7 @@ And to activate them :
 
 `kldload vmm`
 
-`kldload ndmd`
+`kldload nmdm`
 
 **3. How to use**
 
