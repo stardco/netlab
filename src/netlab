@@ -1,13 +1,15 @@
 #!/usr/local/bin/python3.7
 
 import getopt
-from netlab_classes import *
+import sys
+import os.path
+
+from netlab_host import *
 
 ##################
 ## TOOLS
 ##################
-
-def usage():
+def usage_global():
     # Print usage
     print("netlab load | unload | reload | status | connect -h --help")
     print("load, unload, reload options")
@@ -17,6 +19,18 @@ def usage():
     print("status : status of one machine, one area or all machines")
     print ("-m <machine> | -a <area |all>")
     print("-h : print this message")
+
+def usage_machine():
+    # Print usage
+    print("netlab machine create | modify <machine> | delete <machine> | load <machine> | unload <machine> | reload <machine> | status <machine> | connect <machine>")
+    print("create : create a new machine in the configuration files")
+    print("modify <machine>: unload the machine, modify the data in the configuration files and load it")
+    print("delete <machine>: unload the machine and delete the entry in the configuration files")
+    print("load <machine>: load the machine")
+    print("unload <machine>: unload the machine")
+    print("reload <machine>: unload and load the machine")
+    print("status <machine>: status of the machine")
+    print("connect <machine>: connect to the console of the machine")
 
 def netlab_status(host,vm_search="", area_search=""):
     # Status part
@@ -103,7 +117,6 @@ def netlab_load(host,vm_search="", area_search=""):
                 theSwitch = host.get_switch(thePort.port_associated_sw_name)
                 if theSwitch:
                     theSwitch.update_sw()
-
 
 def netlab_unload(host,vm_search="", area_search=""):
     # Check user's rights
@@ -239,11 +252,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "hm:a:", ["help", "machine=", "area="])
     except getopt.GetoptError:
-        usage()
+        usage_global()
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            usage()
+            usage_global()
             sys.exit()
         elif opt in ("-v", "--verbose"):
             global verbose
@@ -255,11 +268,103 @@ def main(argv):
             myVm = arg
         elif opt in ("-a", "--area"):
             myArea = arg
-         
+
+def netlab_machine(host,argv):
+    if argv:
+    	myAction = argv[0]
+    else:
+        myAction = ""
+    if len(argv) >= 2:
+        myVm = host.get_machine(argv[1])
+    else:
+        myVm = ""
+
+    # Create VM in the configuration file
+    if myAction == "create":
+       	Machine.create(host.file_conf_machines)
+    
+    # Modify VM in the configuration file (imply unload and load)
+    elif myAction == "modify":
+       	if myVm:
+            myVm.unload()
+            Machine.modify(host.file_conf_machines,myVm)
+            myVm.load()
+            for thePort in myVm.vm_port_list:
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
+                if theSwitch:
+                    theSwitch.update_sw()
+        else:
+            usage_machine()
+    
+    # Delete VM in configuration file (imply unload)
+    elif myAction == "delete":
+       	if myVm:
+            myVm.unload()
+            Machine.delete(host.file_conf_machines,myVm)
+            myVm.load()
+            for thePort in theVm.vm_port_list:
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
+                if theSwitch:
+                    theSwitch.update_sw()
+        else:
+            usage_machine()
+    
+    # Load the machine
+    elif myAction == "load":
+        if myVm:
+            myVm.load()
+            for thePort in myVm.vm_port_list:
+                theSwitch = host.get_switch(thePort.port_associated_sw_name)
+                if theSwitch:
+                    theSwitch.update_sw()
+        else:
+            usage_machine()
+    
+    # Unload the machine
+    elif myAction == "unload":
+        if myVm:
+            myVm.unload()
+        else:
+            usage_machine()
+    
+    # Reload the machine
+    elif myAction == "reload": 
+        if myVm:
+            myVm.reload()
+        else:
+            usage_machine()
+
+    # Status of the machine
+    elif myAction == "connect": 
+        if myVm:
+            myVm.vm_console.connect_console()
+        else:
+            usage_machine()
+
+    # Connection to the machine
+    elif myAction == "status": 
+        if myVm:
+            print("{:<20} | {:<15} | {:<3} | {:<5} | {:<5} | {:<60} | {:<25}".format("NAME","TYPE","CPU","MEM","PORT","INTERFACES","STATUS"))
+            print(myVm.print_status())
+        else:
+            usage_machine()
+    else:
+        usage_machine()
+
+# Main program
 if __name__ == "__main__":
     main(sys.argv[2:])
-    command_netlab = sys.argv[1]
-    myHost = Host()     
+    # Creation of the Host
+    global myHost
+    myHost = Host()
+
+    # Check if an argument has been passed
+    if len(sys.argv) == 1:
+        command_netlab = "null"
+    else:
+        command_netlab = sys.argv[1]
+    
+    # Execute the netlab command or print the global usage
     if command_netlab == "status":
        	netlab_status(myHost,myVm,myArea)
     elif command_netlab == "load":
@@ -270,3 +375,19 @@ if __name__ == "__main__":
         netlab_reload(myHost,myVm,myArea)
     elif command_netlab == "connect":
         netlab_connect(myHost,myVm)
+    elif command_netlab == "area": 
+        Machine.create(myHost.file_conf_machines)
+    elif command_netlab == "machine": 
+        netlab_machine(myHost,sys.argv[2:])
+    elif command_netlab == "switch":
+        Machine.create(myHost.file_conf_machines)
+    elif command_netlab == "port":
+        Machine.create(myHost.file_conf_machines)
+    elif command_netlab == "template":
+        Machine.create(myHost.file_conf_machines)
+    else:
+        usage_global()
+
+
+
+

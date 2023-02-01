@@ -1,23 +1,24 @@
-
-int2tap: 
-	gcc src/int2tap/int2tap.c -o src/int2tap/int2tap
-
 depends:
 	sh scripts/install_ser2net.sh
-	sh scripts/install_gcc.sh
 	sh scripts/install_python.sh
+	sh scripts/install_grub2-bhyve.sh
 
 post-config:
 	sh scripts/post_configuration.sh
 	
-install: depends int2tap
+install: depends
 	install -d /usr/local/etc/netlab/repo
 	install -d /usr/local/etc/netlab/templates
 	install -d /var/run/netlab
 	touch /var/run/netlab/ser2net_session
-	install -m 0755 -o root -g wheel src/int2tap/int2tap /usr/local/sbin/
 	install -m 0750 -o root -g wheel src/netlab /usr/local/sbin/
-	install -m 0750 -o root -g wheel src/classes/netlab_classes.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_area.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_console.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_host.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_machine.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_port.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_switch.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_template.py /usr/local/lib/python3.7/
 
 	if [ -f /usr/local/etc/netlab/machines.conf ]; then\
 		$(cp /usr/local/etc/netlab/machines.conf /usr/local/etc/netlab/machines.conf.old)\
@@ -47,20 +48,30 @@ install: depends int2tap
 	make post-config
 
 deinstall:
-	rm /usr/local/sbin/int2tap
 	rm /usr/local/sbin/netlab
 	rm -r /var/run/netlab
-	rm /usr/local/lib/python3.7/netlab_classes.py
+	rm /usr/local/lib/python3.7/netlab_area.py
+	rm /usr/local/lib/python3.7/netlab_console.py
+	rm /usr/local/lib/python3.7/netlab_host.py
+	rm /usr/local/lib/python3.7/netlab_machine.py
+	rm /usr/local/lib/python3.7/netlab_port.py
+	rm /usr/local/lib/python3.7/netlab_switch.py
+	rm /usr/local/lib/python3.7/netlab_template.py
 	echo "ser2net not deinstalled. do pkg remove ser2net to delete it"
 	echo "Configuration file in /usr/local/etc/netlab not removed" 
 
-reinstall: stop deinstall int2tap depends
+reinstall: stop deinstall depends
 	install -d /usr/local/etc/netlab/repo
 	install -d /usr/local/etc/netlab/templates
-	install -m 0750 -o root -g wheel src/classes/netlab_classes.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_area.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_console.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_host.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_machine.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_port.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_switch.py /usr/local/lib/python3.7/
+	install -m 0750 -o root -g wheel src/classes/netlab_template.py /usr/local/lib/python3.7/
 	install -d /var/run/netlab
 	touch /var/run/netlab/ser2net_session
-	install -m 0755 -o root -g wheel src/int2tap/int2tap /usr/local/sbin/
 	install -m 0750 -o root -g wheel src/netlab /usr/local/sbin/
 
 stop:
